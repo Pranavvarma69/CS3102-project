@@ -148,4 +148,12 @@ pnpm-lock.yaml
 *.json
 *.JSON
 
-
+# Ignore the problem statements 
+*.pdf 
+*.PDF 
+*.docx 
+*.DOCX 
+*.doc 
+*.DOC 
+*.txt 
+*.TXT 
