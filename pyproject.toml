@@ -6,33 +6,66 @@ build-backend = "setuptools.build_meta"
 name = "hybrid_predictive_maintenance"
 version = "0.1.0"
 description = "Hybrid Predictive Maintenance using Enhanced CMAPSS NASA Dataset"
-readme = "README.md" 
-requires-python = ">=3.9" 
+readme = "README.md"
+requires-python = ">=3.9"
 # dependencies = [
 #     "pandas", "scikit-learn", "numpy", ...
 # ]
 
 [tool.black]
 line-length = 88
-target-version = ['py39'] 
+target-version = ['py39']
 
 [tool.ruff]
 line-length = 88
+target-version = "py39"
 select = [
-    "E",  
-    "W", 
+    "E",
+    "W",
     "F",
     "I",
-    "C", 
+    "C",
     "B",
+    "UP",
+    "N",
+    "S",
+    "A",
 ]
-ignore = ["E501"] 
+ignore = [
+    "E501",
+    "B008",
+    "S101",
+]
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    ".env",
+    "env",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    "data/",
+]
 
 [tool.ruff.lint.isort]
+known-first-party = ["src"]
+
 
 [tool.mypy]
-python_version = "3.9
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
-ignore_missing_imports = true 
-# files = ["src", "tests"]
+ignore_missing_imports = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+files = ["src", "tests"]
+exclude = ["venv/", ".venv/", "env/"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --cov=src --cov-report=term-missing"
+testpaths = [
+    "tests",
+]
