@@ -40,6 +40,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 
+.python-version
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -148,12 +150,12 @@ pnpm-lock.yaml
 *.json
 *.JSON
 
-# Ignore the problem statements 
-*.pdf 
-*.PDF 
-*.docx 
-*.DOCX 
-*.doc 
-*.DOC 
-*.txt 
-*.TXT 
+# Ignore the problem statements
+*.pdf
+*.PDF
+*.docx
+*.DOCX
+*.doc
+*.DOC
+*.txt
+*.TXT

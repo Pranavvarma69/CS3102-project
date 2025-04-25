@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hybrid_predictive_maintenance"
+version = "0.1.0"
+description = "Hybrid Predictive Maintenance using Enhanced CMAPSS NASA Dataset"
+readme = "README.md" 
+requires-python = ">=3.9" 
+# dependencies = [
+#     "pandas", "scikit-learn", "numpy", ...
+# ]
+
+[tool.black]
+line-length = 88
+target-version = ['py39'] 
+
+[tool.ruff]
+line-length = 88
+select = [
+    "E",  
+    "W", 
+    "F",
+    "I",
+    "C", 
+    "B",
+]
+ignore = ["E501"] 
+
+[tool.ruff.lint.isort]
+
+[tool.mypy]
+python_version = "3.9
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true 
+# files = ["src", "tests"]
