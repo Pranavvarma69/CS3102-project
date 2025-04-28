@@ -159,3 +159,5 @@ pnpm-lock.yaml
 *.DOC
 *.txt
 *.TXT
+
+!requirements.txt
