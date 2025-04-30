@@ -14,7 +14,7 @@
 
 - **Data Exploration & Preprocessing**
 
-  - [x] Load training data (`train_FD001.txt`, etc.).
+  - [ ] Load training data (`train_FD001.txt`, etc.).
   - [ ] Perform initial EDA: check NaNs, view sensor statistics, plot sensor trends for a few engines.
   - [ ] Identify and potentially remove constant/non-informative sensor columns.
   - [ ] Visualize sensor correlations.
