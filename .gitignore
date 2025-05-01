@@ -161,3 +161,22 @@ pnpm-lock.yaml
 *.TXT
 
 !requirements.txt
+
+# --- LaTeX ---
+docs/report/build/
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.log # Be careful if you need to track other .log files
+*.out
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+# Specific packages
+_minted*
+*.run.xml # biber
+*.bcf # biber
