@@ -1,0 +1,52 @@
+\section{Related Work}
+\label{sec:related_work}
+
+% Discuss existing work in several categories:
+
+\paragraph{Predictive Maintenance Techniques.}
+Overview of common PdM approaches:
+\begin{itemize}
+    \item Physics-based models (if relevant, briefly).
+    \item Statistical models (e.g., ARIMA, Survival Analysis).
+    \item Traditional Machine Learning (SVM, RF, Regression for RUL).
+    \item Deep Learning approaches (RNN, LSTM, CNN, Transformers for RUL prediction). Mention how they typically use the standard RUL target. Cite key papers.
+\end{itemize}
+
+\paragraph{Work on CMAPSS Dataset.}
+Review how the CMAPSS dataset has been used previously:
+\begin{itemize}
+    \item Focus on RUL prediction (mention state-of-the-art results/methods if known). Cite the Kaggle links/papers provided.
+    \item Any work on fault diagnostics or classification using CMAPSS (though less common than RUL).
+    \item Highlight that most works use the provided RUL labels, contrasting with your approach.
+\end{itemize}
+
+\paragraph{Clustering for Degradation Analysis.}
+Discuss the use of clustering in PdM or related fields:
+\begin{itemize}
+    \item Clustering time-series data.
+    \item Identifying operational modes or health states.
+    \item Anomaly detection using clustering.
+    \item Cite relevant studies, potentially outside CMAPSS if needed.
+\end{itemize}
+
+\paragraph{Hybrid Models in PdM.}
+Review approaches that combine different modeling techniques:
+\begin{itemize}
+    \item Combining classification and regression.
+    \item Ensemble methods.
+    \item Fusion of physics-based and data-driven models.
+    \item Position your work within this context – combining clustering-derived labels with classification/regression.
+\end{itemize}
+
+\paragraph{Risk Assessment in PdM.}
+Discuss how risk or criticality is assessed in maintenance:
+\begin{itemize}
+    \item Existing risk scoring methods.
+    \item Use of probabilities in decision making.
+    \item Contrast with your proposed Risk Score formulation.
+\end{itemize}
+
+% Conclude by summarizing the gap your work addresses (custom multi-stage labeling, hybrid prediction, risk score on CMAPSS).
+
+
+% ======================================================================

@@ -1,0 +1,28 @@
+% sec/6_conclusion.tex
+\section{Conclusion}
+\label{sec:conclusion}
+
+% Summarize the paper concisely.
+\paragraph{Summary.}
+This paper presented a hybrid predictive maintenance framework for turbofan engines using the NASA CMAPSS dataset. We addressed the limitation of traditional binary or RUL-focused approaches by introducing a method to define multi-stage degradation labels via unsupervised clustering of sensor data. Our four-phase methodology involved: (1) data-driven stage labeling, (2) classification for current stage prediction, (3) regression for time-to-next-stage/failure estimation, and (4) calculation of a normalized Risk Score combining probabilistic and temporal predictions for decision support.
+
+% Reiterate key findings and contributions.
+\paragraph{Key Findings.}
+Our experiments demonstrated the feasibility of deriving meaningful degradation stages directly from sensor data. The hybrid model showed promising results in predicting both the current health stage (with careful handling of class imbalance) and the remaining time in that stage or until failure. The proposed Risk Score provides an intuitive metric that captures both the likelihood and urgency of potential failure, offering a potentially valuable tool for maintenance planning.
+
+% Discuss limitations and future work.
+\paragraph{Limitations and Future Work.}
+Limitations include the reliance on simulated data and the sensitivity of the approach to the initial clustering quality and interpretation. Future work could involve:
+\begin{itemize}
+	\item Applying the framework to real-world operational data.
+	\item Exploring more advanced clustering techniques (e.g., deep clustering, time-series specific clustering).
+	\item Investigating different Risk Score formulations and thresholding strategies.
+	\item Integrating domain knowledge more explicitly into the stage definition or modeling process.
+	\item Extending the framework to predict specific fault modes associated with degradation stages.
+\end{itemize}
+
+% Concluding remark on the potential impact.
+\paragraph{Concluding Remarks.}
+By moving towards data-driven, multi-stage health assessment and integrating classification, regression, and risk analysis, this work offers a step towards more granular and actionable predictive maintenance strategies for complex systems.
+
+% ======================================================================

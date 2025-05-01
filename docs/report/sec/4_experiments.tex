@@ -1,0 +1,43 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Dataset and Setup}
+\begin{itemize}
+    \item Reiterate CMAPSS subsets used (FD001-FD004). Briefly describe key differences if relevant (e.g., fault modes, operating conditions).
+    \item Data Splitting Strategy: Crucial for time-series / multi-engine data.
+        - Avoid random shuffling that leaks future data.
+        - Strategy used: e.g., Train on first X% of cycles per engine, test on rest? Train on some engines, test on others? GroupKFold based on engine ID for cross-validation? Be specific and justify.
+    \item Software/Libraries: Python version, scikit-learn, pandas, numpy, matplotlib, seaborn, XGBoost, LightGBM, etc.
+\end{itemize}
+
+\subsection{Implementation Details}
+\begin{itemize}
+    \item Clustering: Final parameters chosen (k for KMeans, linkage for Agglomerative), features used.
+    \item Feature Engineering: Final window sizes used for rolling statistics.
+    \item Classification:
+        - Specific models trained.
+        - Hyperparameter tuning process (e.g., GridSearchCV, RandomizedSearchCV), parameter grids searched, cross-validation strategy (link to splitting strategy).
+        - Final hyperparameters for the best model(s).
+        - Imbalance handling method details.
+    \item Regression:
+        - Specific models trained.
+        - Target variable definition details (handling Stage 4).
+        - Hyperparameter tuning process and final parameters.
+    \item Risk Score:
+        - Specific probability used ($P(\text{Stage 4})$?).
+        - Specific $T_{left}$ derivation.
+        - Normalization details ($min/max$ values from validation set).
+        - Method for threshold tuning (e.g., F-beta score maximization on PR curve).
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+\begin{itemize}
+    \item Restate the primary metrics used for each phase:
+        - Clustering: Visual inspection, Silhouette Score (if used).
+        - Classification: Per-class Precision, Recall, F1-score; Weighted/Macro F1; Confusion Matrix.
+        - Regression: RMSE, MAE, R².
+        - Risk Score: Precision-Recall analysis for alert threshold tuning.
+\end{itemize}
+
+
+% ======================================================================
