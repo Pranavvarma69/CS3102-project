@@ -180,3 +180,11 @@ docs/report/build/
 _minted*
 *.run.xml # biber
 *.bcf # biber
+
+# Ignore Database
+
+data/raw/
+data/processed/
+*.png
+*.jpg
+*.parquet
