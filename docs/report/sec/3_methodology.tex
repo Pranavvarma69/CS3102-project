@@ -1,0 +1,166 @@
+\section{Methodology}
+\label{sec:methodology}
+
+% Introduce the overall 4-phase pipeline. Maybe a figure illustrating the flow?
+
+% --- Optional: Figure Placeholder ---
+% \begin{figure*}[t]
+%   \centering
+%   \includegraphics[width=\linewidth]{figures/pipeline_diagram.pdf} % Replace with your pipeline figure
+%   \caption{The proposed four-phase hybrid predictive maintenance pipeline.}
+%   \label{fig:pipeline}
+% \end{figure*}
+% ----------------------------------
+
+\subsection{Data Loading and Preprocessing}
+\label{subsec:data_preprocessing}
+\begin{itemize}
+    \item Describe the CMAPSS dataset: Source (NASA), purpose (turbofan engine degradation simulation).
+    \item Mention the specific subsets used (e.g., FD001, FD002, FD003, FD004) and why.
+    \item Detail the structure: engine ID, cycle number, operational settings (usually 3), sensor readings (usually 21).
+    \item Preprocessing steps:
+        - Handling missing values (if any, though CMAPSS usually doesn't have them).
+        - Identifying and removing constant or non-informative sensor columns (provide rationale and list columns removed).
+        - Feature scaling (e.g., StandardScaler, MinMaxScaler) - mention it's applied *after* splitting or within folds, but describe the technique here.
+\end{itemize}
+
+\subsection{Feature Engineering}
+\label{subsec:feature_engineering}
+\begin{itemize}
+    \item Rationale: Raw sensor data might not be enough; temporal patterns are important.
+    \item Rolling Window Statistics:
+        - Explain the concept: calculating stats over a sliding time window.
+        - Features created: Mean, Standard Deviation (potentially others like min, max, skewness, kurtosis).
+        - Window sizes experimented with (e.g., 5, 10, 20 cycles) - justify choices or state they were tuned.
+        - Apply per sensor.
+    \item Dimensionality Reduction for Visualization (primarily):
+        - Mention PCA or t-SNE used later for visualizing clusters (\cref{subsec:clustering}). Briefly explain the purpose (reducing high-dimensional sensor/feature space to 2D/3D).
+\end{itemize}
+
+\subsection{Phase 1: Clustering for Multi-Stage Labeling}
+\label{subsec:clustering}
+\begin{itemize}
+    \item Goal: Define 5 degradation stages (0: Normal -> 4: Failure) from data, *without* using standard RUL.
+    \item Feature Selection for Clustering: Which sensors/engineered features were used? (e.g., exclude operational settings, use raw sensors or rolling stats?). Justify the choice.
+    \item Clustering Algorithms:
+        - KMeans: Explain briefly. Mention choice of k=5 (as per project plan), distance metric (Euclidean).
+        - Agglomerative Clustering: Explain briefly. Mention linkage method (e.g., Ward, average), distance metric.
+    \item Cluster Validation and Interpretation (Crucial Step):
+        - How were clusters evaluated? (e.g., Silhouette score - though interpretation is key).
+        - Visualization: Use PCA/t-SNE on the clustering features, color points by cluster ID. (Placeholder for \cref{fig:cluster_pca_tsne}).
+        - Manual Inspection: Plot key sensor trends (raw or rolling mean/std) over time for engines within each cluster. Align clusters to semantic stages (0-4) based on observed patterns (e.g., stable low values = Normal, increasing trend = Degraded, sharp change = Critical/Failure). This is iterative. Document the interpretation. (Placeholder for \cref{fig:sensor_trends_per_cluster}).
+    \item Final Label Assignment: Create the 'degradation_stage' column based on the validated cluster assignments for each data point.
+    \item Handling Cluster Imbalance: Acknowledge that stages might be imbalanced (more Normal data).
+\end{itemize}
+
+% --- Figure Placeholders ---
+% \begin{figure}[t]
+%   \centering
+%   \begin{subfigure}{0.48\linewidth}
+%     \includegraphics[width=\linewidth]{figures/cluster_pca.pdf}
+%     \caption{PCA Visualization}
+%     \label{fig:cluster_pca}
+%   \end{subfigure}
+%   \hfill
+%   \begin{subfigure}{0.48\linewidth}
+%     \includegraphics[width=\linewidth]{figures/cluster_tsne.pdf}
+%     \caption{t-SNE Visualization}
+%     \label{fig:cluster_tsne}
+%   \end{subfigure}
+%   \caption{Visualization of clusters using (a) PCA and (b) t-SNE on selected features for FD001.}
+%   \label{fig:cluster_pca_tsne}
+% \end{figure}
+
+% \begin{figure*}[t]
+%   \centering
+%   \includegraphics[width=\linewidth]{figures/sensor_trends_cluster.pdf} % Needs careful creation
+%   \caption{Example sensor trends (e.g., Sensor X rolling mean) over engine life, grouped by assigned cluster/degradation stage. Illustrates the patterns used for manual cluster interpretation.}
+%   \label{fig:sensor_trends_per_cluster}
+% \end{figure*}
+% --------------------------
+
+\subsection{Phase 2: Classification Model (Predicting Stage)}
+\label{subsec:classification}
+\begin{itemize}
+    \item Goal: Predict the current degradation stage (0-4) based on sensor/engineered features.
+    \item Input Features: List the features used for classification (raw sensors, rolling stats, op settings?).
+    \item Target Variable: The 'degradation\_stage' column created in Phase 1.
+    \item Models Used:
+        - Baseline: Logistic Regression.
+        - Tree-based: Random Forest, XGBoost, LightGBM.
+        - Mention SVM if used.
+    \item Handling Class Imbalance:
+        - Explain the issue (likely fewer samples in stages 3, 4).
+        - Techniques used: `class_weight='balanced'` (for models that support it), custom weights, or over/under-sampling (e.g., SMOTE). Specify which were used.
+    \item Evaluation Metrics:
+        - Accuracy (overall, but potentially misleading).
+        - Precision, Recall, F1-score (macro, weighted, and per-class). Emphasize importance of metrics for minority classes (Stages 3, 4).
+        - Confusion Matrix: To visualize misclassifications between stages. (Placeholder for \cref{fig:confusion_matrix}).
+    \item Feature Importance: Analyze feature importance from tree-based models (e.g., Gini importance, SHAP values). (Placeholder for \cref{fig:feature_importance_cls}).
+\end{itemize}
+
+% --- Figure Placeholders ---
+% \begin{figure}[t]
+%   \centering
+%   \includegraphics[width=0.7\linewidth]{figures/confusion_matrix.pdf} % Replace with your confusion matrix plot
+%   \caption{Confusion matrix for the best performing classification model on the validation set (FD001).}
+%   \label{fig:confusion_matrix}
+% \end{figure}
+
+% \begin{figure}[t]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/feature_importance_cls.pdf} % Replace with your feature importance plot
+%   \caption{Top N feature importances for the classification model.}
+%   \label{fig:feature_importance_cls}
+% \end{figure}
+% --------------------------
+
+\subsection{Phase 3: Regression Model (Time-to-Next-Stage/Failure)}
+\label{subsec:regression}
+\begin{itemize}
+    \item Goal: Predict the remaining cycles until the *next* degradation stage transition occurs.
+    \item Target Variable Engineering:
+        - For a data point at cycle `t` in Stage `S`, find the cycle `t_next` where the engine first enters Stage `S+1`.
+        - The target label is `RUL_next_stage = t_next - t`.
+        - Handling the final stage (Stage 4): How is the target defined? (e.g., set to 0, use original RUL if absolutely necessary *only* for this, cap at a max observed value?). Be explicit.
+    \item Input Features: List the features used (similar to classification?).
+    \item Models Used:
+        - Baseline: Linear Regression (or Ridge).
+        - Tree-based: Random Forest Regressor, XGBoost Regressor.
+        - Mention SVR if used.
+    \item Evaluation Metrics:
+        - Root Mean Squared Error (RMSE).
+        - Mean Absolute Error (MAE).
+        - R² Score (Coefficient of Determination).
+        - Potentially custom metrics like the NASA scoring function if comparing to standard RUL tasks.
+\end{itemize}
+
+\subsection{Phase 4: Risk Score Calculation and Decision Logic}
+\label{subsec:risk_score}
+\begin{itemize}
+    \item Goal: Combine classification and regression outputs into a single, interpretable Risk Score for maintenance decisions.
+    \item Components:
+        - Failure Probability ($P_{fail}$): Probability of being in the highest degradation stage(s) (e.g., $P(\text{Stage 4})$ or $P(\text{Stage 3 or 4})$) obtained from the classifier's `predict_proba` output. Specify which probability is used.
+        - Time Left ($T_{left}$): Estimated time until failure. This might be the direct output of the regression model if predicting time-to-Stage-4, OR it could be a sum/combination of predicted time-to-next-stage values. Be precise about how $T_{left}$ is derived from the regression output(s).
+    \item Risk Score Formulation: Define the chosen formula. Examples from plan:
+        - Urgency-Based: $Risk = P_{fail} / (T_{left} + \epsilon)$ (where $\epsilon$ is a small constant to avoid division by zero). Higher probability and shorter time lead to higher risk.
+        - Alternative: $Risk = P_{fail} \times (\text{Max Observed Time} - T_{left})$ (or similar scaling). Justify the chosen formulation.
+    \item Normalization: Explain the need for normalization (e.g., scaling to [0, 1]).
+        - Method used: Min-Max Scaling: $Risk_{norm} = (Risk - Risk_{min}) / (Risk_{max} - Risk_{min})$. Explain how $Risk_{min}$ and $Risk_{max}$ are determined (e.g., from the validation set).
+    \item Decision Logic:
+        - Thresholding: Define an alert threshold $\theta$ on the normalized Risk Score. If $Risk_{norm} > \theta$, issue a maintenance alert.
+        - Threshold Tuning: Explain how $\theta$ was chosen (e.g., analyzing Precision-Recall curve for identifying high-risk states on the validation set, balancing true alerts vs. false alarms).
+    \item Visualization: Plot the calculated Risk Score over time for sample engines. (Placeholder for \cref{fig:risk_score_trend}).
+\end{itemize}
+
+% --- Figure Placeholder ---
+% \begin{figure}[t]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/risk_score_trend.pdf} % Replace with your risk score plot
+%   \caption{Example of normalized Risk Score evolution over cycles for a sample engine, showing the alert threshold.}
+%   \label{fig:risk_score_trend}
+% \end{figure}
+% --------------------------
+
+
+% ======================================================================
