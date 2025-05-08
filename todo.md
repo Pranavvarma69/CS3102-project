@@ -14,19 +14,19 @@
 
 - **Data Exploration & Preprocessing**
 
-  - [ ] Load training data (`train_FD001.txt`, etc.).
-  - [ ] Perform initial EDA: check NaNs, view sensor statistics, plot sensor trends for a few engines.
-  - [ ] Identify and potentially remove constant/non-informative sensor columns.
-  - [ ] Visualize sensor correlations.
-  - [ ] Write basic data loading and cleaning script/functions.
-  - [ ] Explore test data and RUL file structure (though RUL file won't be used for initial labeling).
+  - [ x ] Load training data (`train_FD001.txt`, etc.).
+  - [ x ] Perform initial EDA: check NaNs, view sensor statistics, plot sensor trends for a few engines.
+  - [ x ] Identify and potentially remove constant/non-informative sensor columns.
+  - [ x ] Visualize sensor correlations.
+  - [ x ] Write basic data loading and cleaning script/functions.
+  - [ x ] Explore test data and RUL file structure (though RUL file won't be used for initial labeling).
 
 - **Feature Engineering**
 
-  - [ ] Implement functions to calculate rolling window statistics (mean, std) for sensors.
-  - [ ] Experiment with different window sizes.
-  - [ ] Apply PCA/t-SNE to visualize engine trajectories in lower dimensions.
-  - [ ] Document feature engineering choices and rationale in the report draft.
+  - [ x ] Implement functions to calculate rolling window statistics (mean, std) for sensors.
+  - [ x ] Experiment with different window sizes.
+  - [ x ] Apply PCA/t-SNE to visualize engine trajectories in lower dimensions.
+  - [ x ] Document feature engineering choices and rationale in the report draft.
 
 - **Phase 1: Clustering & Labeling**
 

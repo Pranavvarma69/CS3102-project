@@ -8,9 +8,17 @@ version = "0.1.0"
 description = "Hybrid Predictive Maintenance using Enhanced CMAPSS NASA Dataset"
 readme = "README.md"
 requires-python = ">=3.9"
-# dependencies = [
-#     "pandas", "scikit-learn", "numpy", ...
-# ]
+dependencies = [
+    "pandas",
+    "scikit-learn",
+    "numpy",
+    "matplotlib",
+    "seaborn",
+    "imbalanced-learn", # For SMOTE
+    "xgboost",
+    "lightgbm",
+    # ... other dependencies
+]
 
 [tool.black]
 line-length = 88

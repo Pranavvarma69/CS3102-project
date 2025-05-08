@@ -12,6 +12,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data", "raw", "CMaps")
 PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "data", "processed")
 IMAGE_DIR = os.path.join(BASE_DIR, "images")
+REPORTS_DIR = os.path.join(BASE_DIR, "reports")
 
 COLUMNS = [
     "engine_id",
