@@ -188,3 +188,4 @@ data/processed/
 *.png
 *.jpg
 *.parquet
+*.joblib

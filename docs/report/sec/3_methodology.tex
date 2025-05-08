@@ -1,166 +1,157 @@
 \section{Methodology}
 \label{sec:methodology}
 
-% Introduce the overall 4-phase pipeline. Maybe a figure illustrating the flow?
-
-% --- Optional: Figure Placeholder ---
-% \begin{figure*}[t]
-%   \centering
-%   \includegraphics[width=\linewidth]{figures/pipeline_diagram.pdf} % Replace with your pipeline figure
-%   \caption{The proposed four-phase hybrid predictive maintenance pipeline.}
-%   \label{fig:pipeline}
-% \end{figure*}
-% ----------------------------------
+Our proposed hybrid predictive maintenance framework consists of four main phases, designed to progress from raw sensor data to actionable maintenance decisions. , focuses on deriving data-driven health stages and combining classification and regression predictions into a unified risk assessment.
 
 \subsection{Data Loading and Preprocessing}
 \label{subsec:data_preprocessing}
-\begin{itemize}
-    \item Describe the CMAPSS dataset: Source (NASA), purpose (turbofan engine degradation simulation).
-    \item Mention the specific subsets used (e.g., FD001, FD002, FD003, FD004) and why.
-    \item Detail the structure: engine ID, cycle number, operational settings (usually 3), sensor readings (usually 21).
-    \item Preprocessing steps:
-        - Handling missing values (if any, though CMAPSS usually doesn't have them).
-        - Identifying and removing constant or non-informative sensor columns (provide rationale and list columns removed).
-        - Feature scaling (e.g., StandardScaler, MinMaxScaler) - mention it's applied *after* splitting or within folds, but describe the technique here.
-\end{itemize}
+We utilize the NASA CMAPSS dataset \cite{cmapss_data, saxena2008damage}, specifically subsets FD001, FD002, FD003, and FD004, which simulate turbofan engine degradation under varying operating conditions and fault modes. Each subset contains multivariate time-series data for multiple engine units, including engine ID, cycle number, three operational settings, and 21 sensor measurements.
+
+The initial preprocessing involves loading the raw text files (e.g., train\_FD001.txt, train\_FD002.txt, etc.) using the structure defined in src.data\_loading. We identify and remove sensor columns exhibiting constant values throughout the entire training dataset for a given subset, as these provide no discriminative information for degradation modeling. This step is handled by functions within src.preprocessing, specifically identify\_constant\_features followed by drop\_features. Feature scaling, typically using sklearn.preprocessing.StandardScaler, is applied to the sensor and engineered features before feeding them into clustering or machine learning models to ensure that features with larger value ranges do not dominate the results. Scaling is performed appropriately within the cross-validation pipeline during model training and tuning to prevent data leakage from the validation fold into the scaler fitting process.
 
 \subsection{Feature Engineering}
 \label{subsec:feature_engineering}
+To capture temporal dynamics and enhance the predictive power of the models, we engineer several features from the raw sensor data, primarily implemented in src.feature\_engineering.window\_statistics and orchestrated by src.feature\_engineering.dimensionality\_reduction.generate\_engineered\_features:
+
 \begin{itemize}
-    \item Rationale: Raw sensor data might not be enough; temporal patterns are important.
-    \item Rolling Window Statistics:
-        - Explain the concept: calculating stats over a sliding time window.
-        - Features created: Mean, Standard Deviation (potentially others like min, max, skewness, kurtosis).
-        - Window sizes experimented with (e.g., 5, 10, 20 cycles) - justify choices or state they were tuned.
-        - Apply per sensor.
-    \item Dimensionality Reduction for Visualization (primarily):
-        - Mention PCA or t-SNE used later for visualizing clusters (\cref{subsec:clustering}). Briefly explain the purpose (reducing high-dimensional sensor/feature space to 2D/3D).
+	\item \textbf{Rolling Window Statistics:} For each sensor, we compute statistics (mean, standard deviation) over a sliding time window (e.g., 5 cycles). This helps capture recent trends and variability in sensor readings (using add\_rolling\_statistics).
+	\item \textbf{Lag Features:} Sensor values from previous cycles (e.g., lag 1, 2, 3) are included as features to provide the models with historical context (using add\_lag\_features).
+	\item \textbf{Rate of Change:} The difference or percentage change between consecutive sensor readings is calculated to represent the instantaneous trend (using add\_rate\_of\_change).
+	\item \textbf{Remaining Useful Life (RUL):} Although not used for stage definition, the true RUL (calculated as max cycle - current cycle for each engine) is computed via add\_remaining\_useful\_life and retained for potential analysis or comparison during the clustering interpretation phase.
 \end{itemize}
+These engineered features, along with potentially the raw sensor data, form the input for the subsequent clustering and modeling phases. Dimensionality reduction techniques like Principal Component Analysis (PCA) (src.feature\_engineering.dimensionality\_reduction.apply\_pca) are primarily employed for visualization purposes, particularly for inspecting the separability of clusters.
 
 \subsection{Phase 1: Clustering for Multi-Stage Labeling}
 \label{subsec:clustering}
+A core component of our approach is the unsupervised definition of degradation stages directly from the data, bypassing reliance on predefined RUL labels. The goal is to identify 5 distinct operational stages ($k=5$), representing the progression from normal operation to failure, based on patterns in the sensor and/or engineered feature space.
+
 \begin{itemize}
-    \item Goal: Define 5 degradation stages (0: Normal -> 4: Failure) from data, *without* using standard RUL.
-    \item Feature Selection for Clustering: Which sensors/engineered features were used? (e.g., exclude operational settings, use raw sensors or rolling stats?). Justify the choice.
-    \item Clustering Algorithms:
-        - KMeans: Explain briefly. Mention choice of k=5 (as per project plan), distance metric (Euclidean).
-        - Agglomerative Clustering: Explain briefly. Mention linkage method (e.g., Ward, average), distance metric.
-    \item Cluster Validation and Interpretation (Crucial Step):
-        - How were clusters evaluated? (e.g., Silhouette score - though interpretation is key).
-        - Visualization: Use PCA/t-SNE on the clustering features, color points by cluster ID. (Placeholder for \cref{fig:cluster_pca_tsne}).
-        - Manual Inspection: Plot key sensor trends (raw or rolling mean/std) over time for engines within each cluster. Align clusters to semantic stages (0-4) based on observed patterns (e.g., stable low values = Normal, increasing trend = Degraded, sharp change = Critical/Failure). This is iterative. Document the interpretation. (Placeholder for \cref{fig:sensor_trends_per_cluster}).
-    \item Final Label Assignment: Create the 'degradation_stage' column based on the validated cluster assignments for each data point.
-    \item Handling Cluster Imbalance: Acknowledge that stages might be imbalanced (more Normal data).
+	\item \textbf{Feature Selection:} We select a subset of informative raw sensors or engineered features (rolling statistics) as input for the clustering algorithms. This choice is critical and may vary slightly between datasets based on initial exploratory data analysis (EDA) results (see scripts/run\_eda\_feature\_eng.py).
+	\item \textbf{Clustering Algorithms:} We experiment with two primary algorithms implemented in src.clustering.algorithms:
+	      \begin{itemize}
+		      \item \textbf{KMeans:} A partitioning method aiming to minimize within-cluster variance (apply\_kmeans\_clustering).
+		      \item \textbf{Agglomerative Clustering:} A hierarchical method, typically using Ward linkage, which merges clusters based on minimizing variance increase (apply\_agglomerative\_clustering). Due to its computational complexity ($O(N^2)$ or higher), subsampling might be employed for larger datasets (FD002, FD004) as managed in src.clustering.orchestrator.
+	      \end{itemize}
+	\item \textbf{Cluster Interpretation and Stage Mapping:} Assigning semantic meaning (Stage 0 to 4) to the resulting clusters is crucial. This involves:
+	      \begin{itemize}
+		      \item \textbf{Visualization:} Using PCA (src.feature\_engineering.visualization.plot\_pca\_components) or t-SNE to visualize the clusters in 2D. We expect to see some separation, although overlap is likely (\cref{fig:cluster_pca}).
+		      \item \textbf{Sensor Trend Analysis:} Plotting key sensor values (or their rolling statistics) over the engine's life cycle, color-coded by the assigned raw cluster ID. This allows for manual inspection and alignment of clusters with expected degradation patterns (e.g., clusters with consistently low sensor values might represent 'Normal', while clusters with sharp increases/decreases towards the end of life might represent 'Critical' or 'Failure'). This is visualized using functions like src.clustering.visualization.plot\_sensor\_trends\_with\_stages (\cref{fig:sensor_trends_cluster}).
+		      \item \textbf{RUL-based Ordering:} As a primary heuristic for ordering, we calculate the average RUL for data points within each raw cluster. Clusters are then mapped to Stages 0 (highest average RUL) through 4 (lowest average RUL) using the logic in src.clustering.label\_processing.map\_clusters\_to\_stages\_by\_rul.
+	      \end{itemize}
+	\item \textbf{Final Labels:} The result of this phase is a new column (e.g., kmeans\_stage, agglomerative\_stage) added to the dataset, containing the derived stage label (0-4) for each time step. This process is orchestrated by src.clustering.orchestrator. It's noted that real-world data naturally exhibits class imbalance, with significantly more samples in healthy stages than in failure stages, which is expected and handled in the subsequent classification phase.
 \end{itemize}
 
-% --- Figure Placeholders ---
-% \begin{figure}[t]
-%   \centering
-%   \begin{subfigure}{0.48\linewidth}
-%     \includegraphics[width=\linewidth]{figures/cluster_pca.pdf}
-%     \caption{PCA Visualization}
-%     \label{fig:cluster_pca}
-%   \end{subfigure}
-%   \hfill
-%   \begin{subfigure}{0.48\linewidth}
-%     \includegraphics[width=\linewidth]{figures/cluster_tsne.pdf}
-%     \caption{t-SNE Visualization}
-%     \label{fig:cluster_tsne}
-%   \end{subfigure}
-%   \caption{Visualization of clusters using (a) PCA and (b) t-SNE on selected features for FD001.}
-%   \label{fig:cluster_pca_tsne}
-% \end{figure}
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.8\linewidth]{/home/cv-rishi/Dropbox/University/Sem4/CS3102/project/images/clustering/FD001/FD001_kmeans_pca_clusters.png}
+	\caption{Example PCA visualization of derived clusters (e.g., KMeans) for dataset FD001, colored by assigned stage label.}
+	\label{fig:cluster_pca}
+\end{figure}
 
-% \begin{figure*}[t]
-%   \centering
-%   \includegraphics[width=\linewidth]{figures/sensor_trends_cluster.pdf} % Needs careful creation
-%   \caption{Example sensor trends (e.g., Sensor X rolling mean) over engine life, grouped by assigned cluster/degradation stage. Illustrates the patterns used for manual cluster interpretation.}
-%   \label{fig:sensor_trends_per_cluster}
-% \end{figure*}
-% --------------------------
+\begin{figure*}[t]
+	\centering
+	\includegraphics[width=\linewidth]{/home/cv-rishi/Dropbox/University/Sem4/CS3102/project/images/clustering/FD001/FD001_engine_11_kmeans_sensor_stage_trends.png}
+	\caption{Illustrative sensor trends (e.g., rolling mean of Sensor S7) over engine life cycles, grouped and colored by the data-driven degradation stage assigned in Phase 1. This visualization aids in interpreting the meaning of each stage.}
+	\label{fig:sensor_trends_cluster}
+\end{figure*}
 
 \subsection{Phase 2: Classification Model (Predicting Stage)}
 \label{subsec:classification}
+The goal of this phase is to train a supervised model to predict the current degradation stage (0-4), using the labels generated in Phase 1. The implementation is primarily located in the src.classification module.
+
 \begin{itemize}
-    \item Goal: Predict the current degradation stage (0-4) based on sensor/engineered features.
-    \item Input Features: List the features used for classification (raw sensors, rolling stats, op settings?).
-    \item Target Variable: The 'degradation\_stage' column created in Phase 1.
-    \item Models Used:
-        - Baseline: Logistic Regression.
-        - Tree-based: Random Forest, XGBoost, LightGBM.
-        - Mention SVM if used.
-    \item Handling Class Imbalance:
-        - Explain the issue (likely fewer samples in stages 3, 4).
-        - Techniques used: `class_weight='balanced'` (for models that support it), custom weights, or over/under-sampling (e.g., SMOTE). Specify which were used.
-    \item Evaluation Metrics:
-        - Accuracy (overall, but potentially misleading).
-        - Precision, Recall, F1-score (macro, weighted, and per-class). Emphasize importance of metrics for minority classes (Stages 3, 4).
-        - Confusion Matrix: To visualize misclassifications between stages. (Placeholder for \cref{fig:confusion_matrix}).
-    \item Feature Importance: Analyze feature importance from tree-based models (e.g., Gini importance, SHAP values). (Placeholder for \cref{fig:feature_importance_cls}).
+	\item \textbf{Input Features:} The feature set typically includes a combination of raw sensor measurements, operational settings, and the engineered features (rolling statistics, lag features, rate of change) described in \cref{subsec:feature_engineering}. The exact feature set is determined during experimentation.
+	\item \textbf{Target Variable:} The derived degradation stage column (e.g., kmeans\_stage).
+	\item \textbf{Models Trained:} Based on experimental results reported in reports/classification, we focus on:
+	      \begin{itemize}
+		      \item K-Nearest Neighbors (KNN)
+		      \item Gaussian Naive Bayes (GNB)
+		      \item Logistic Regression
+	      \end{itemize}
+	      These models are instantiated via src.classification.models.get\_classifier. While models like Random Forest and MLP were explored, the chosen models offered a good balance of performance and simplicity for this task.
+	\item \textbf{Handling Class Imbalance:} Given the expected imbalance in stage distribution, we employ strategies during training (src.classification.models.train\_model and orchestrated in scripts/classification.py):
+	      \begin{itemize}
+		      \item \textbf{Class Weighting:} Assigning higher weights to minority classes (Stages 3, 4) using the class\_weight='balanced' option in models like Logistic Regression, or by providing custom weights.
+		      \item \textbf{Resampling (SMOTE):} Using the Synthetic Minority Over-sampling TEchnique (SMOTE) from imblearn.over\_sampling to generate synthetic samples for the minority classes. This is applied *only* to the training data within each cross-validation fold to prevent data leakage.
+	      \end{itemize}
+	\item \textbf{Evaluation:} Model performance is evaluated using cross-validation (GroupKFold by engine ID, managed via src.classification.data\_preparation.split\_data\_grouped). Key metrics, calculated by src.classification.evaluation.get\_classification\_metrics, include:
+	      \begin{itemize}
+		      \item Per-class Precision, Recall, and F1-score, with particular focus on Stages 3 and 4.
+		      \item Macro and Weighted F1-scores for overall performance assessment.
+		      \item Confusion Matrices (src.classification.evaluation.plot\_confusion\_matrix) to visualize inter-stage misclassifications (\cref{fig:confusion_matrix}).
+	      \end{itemize}
+	\item \textbf{Hyperparameter Tuning:} We utilize GridSearchCV or RandomizedSearchCV (src.classification.tuning.perform\_hyperparameter\_tuning) with cross-validation to find optimal hyperparameters for the chosen models, optimizing for a relevant metric like macro F1-score. Tuned parameters are recorded in the reports.
+	\item \textbf{Feature Importance:} For models like Logistic Regression (using coefficient magnitudes) or if tree-based models were selected, feature importances are analyzed using src.classification.evaluation.get\_feature\_importance to understand which features contribute most to stage prediction.
 \end{itemize}
 
-% --- Figure Placeholders ---
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.7\linewidth]{figures/confusion_matrix.pdf} % Replace with your confusion matrix plot
-%   \caption{Confusion matrix for the best performing classification model on the validation set (FD001).}
-%   \label{fig:confusion_matrix}
-% \end{figure}
-
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/feature_importance_cls.pdf} % Replace with your feature importance plot
-%   \caption{Top N feature importances for the classification model.}
-%   \label{fig:feature_importance_cls}
-% \end{figure}
-% --------------------------
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.7\linewidth]{/home/cv-rishi/Dropbox/University/Sem4/CS3102/project/images/classification/FD001/LogisticRegression/fold_validations/cm_fold4_LogisticRegression_smoteTrue_f7356cff.png}
+	\caption{Example confusion matrix for the selected classification model (e.g., Logistic Regression with SMOTE) on the validation set folds for FD001.}
+	\label{fig:confusion_matrix}
+\end{figure}
 
 \subsection{Phase 3: Regression Model (Time-to-Next-Stage/Failure)}
 \label{subsec:regression}
+This phase focuses on predicting the remaining time, in cycles, until the engine transitions to the next degradation stage. The implementation resides in the src.regression module.
+
 \begin{itemize}
-    \item Goal: Predict the remaining cycles until the *next* degradation stage transition occurs.
-    \item Target Variable Engineering:
-        - For a data point at cycle `t` in Stage `S`, find the cycle `t_next` where the engine first enters Stage `S+1`.
-        - The target label is `RUL_next_stage = t_next - t`.
-        - Handling the final stage (Stage 4): How is the target defined? (e.g., set to 0, use original RUL if absolutely necessary *only* for this, cap at a max observed value?). Be explicit.
-    \item Input Features: List the features used (similar to classification?).
-    \item Models Used:
-        - Baseline: Linear Regression (or Ridge).
-        - Tree-based: Random Forest Regressor, XGBoost Regressor.
-        - Mention SVR if used.
-    \item Evaluation Metrics:
-        - Root Mean Squared Error (RMSE).
-        - Mean Absolute Error (MAE).
-        - R² Score (Coefficient of Determination).
-        - Potentially custom metrics like the NASA scoring function if comparing to standard RUL tasks.
+	\item \textbf{Target Variable Engineering:} The core task here is creating the target label, time\_to\_next\_stage. For each data point $(engine\_id, cycle)$ currently in stage $S < S_{max}$, we find the minimum cycle $cycle_{next}$ where the same engine enters stage $S+1$. The target is $cycle_{next} - cycle$. If the engine never reaches stage $S+1$, or if the current stage is $S_{max}$ (Stage 4), special handling is required. For points already in the final stage (Stage 4), the time-to-next-stage is defined as 0. For points in stages $S < 4$ where stage $S+1$ is never reached within the observed data for that engine, these points are typically excluded from the regression training/evaluation dataset as their true time-to-next-stage is unknown (censored). This logic is implemented in src.regression.data\_preparation.engineer\_time\_to\_next\_stage.
+	\item \textbf{Input Features:} The feature set is similar to the classification phase, potentially including raw sensors, operational settings, engineered features, and crucially, the \textit{current predicted stage} (or the stage label derived from clustering) can also be used as an input feature, as the time-to-next-stage is highly dependent on the current stage.
+	\item \textbf{Models Trained:} We evaluate standard regression algorithms available in scikit-learn and potentially XGBoost, selected via src.regression.models.get\_regressor:
+	      \begin{itemize}
+		      \item Linear Regression (often with Ridge regularization)
+		      \item Random Forest Regressor
+		      \item XGBoost Regressor
+	      \end{itemize}
+	\item \textbf{Evaluation:} Models are trained and evaluated using GroupKFold cross-validation (src.regression.data\_preparation.split\_data\_grouped\_regression). Performance is measured using standard regression metrics calculated by src.regression.evaluation.get\_regression\_metrics:
+	      \begin{itemize}
+		      \item Root Mean Squared Error (RMSE)
+		      \item Mean Absolute Error (MAE)
+		      \item R² Score (Coefficient of Determination)
+	      \end{itemize}
+	      Visualizations include actual vs. predicted plots and residual plots (src.regression.evaluation.plot\_actual\_vs\_predicted, src.regression.evaluation.plot\_residuals) to assess model fit and error distribution (\cref{fig:actual_vs_pred}, \cref{fig:residuals}).
+	\item \textbf{Hyperparameter Tuning:} Similar to classification, hyperparameters are tuned using GridSearchCV or RandomizedSearchCV with appropriate scoring (e.g., neg\_root\_mean\_squared\_error), implemented in src.regression.tuning.perform\_regression\_hyperparameter\_tuning.
 \end{itemize}
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.7\linewidth]{/home/cv-rishi/Dropbox/University/Sem4/CS3102/project/images/regression/FD001/RandomForestRegressor/fold_validations/baseline_default/actual_vs_pred_f1_baseline_default_d597b853.png}
+	\caption{Example scatter plot of actual vs. predicted Time-to-Next-Stage for the selected regression model on validation data.}
+	\label{fig:actual_vs_pred}
+\end{figure}
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.8\linewidth]{/home/cv-rishi/Dropbox/University/Sem4/CS3102/project/images/regression/FD001/RandomForestRegressor/fold_validations/baseline_default/residuals_f1_baseline_default_d597b853.png}
+	\caption{Example residuals plot (Residuals vs. Predicted Time-to-Next-Stage) for the selected regression model on validation data.}
+	\label{fig:residuals}
+\end{figure}
 
 \subsection{Phase 4: Risk Score Calculation and Decision Logic}
 \label{subsec:risk_score}
+The final phase combines the outputs from classification and regression to produce a comprehensive Risk Score, facilitating maintenance decisions. This is managed by the src.risk\_assessment module.
+
 \begin{itemize}
-    \item Goal: Combine classification and regression outputs into a single, interpretable Risk Score for maintenance decisions.
-    \item Components:
-        - Failure Probability ($P_{fail}$): Probability of being in the highest degradation stage(s) (e.g., $P(\text{Stage 4})$ or $P(\text{Stage 3 or 4})$) obtained from the classifier's `predict_proba` output. Specify which probability is used.
-        - Time Left ($T_{left}$): Estimated time until failure. This might be the direct output of the regression model if predicting time-to-Stage-4, OR it could be a sum/combination of predicted time-to-next-stage values. Be precise about how $T_{left}$ is derived from the regression output(s).
-    \item Risk Score Formulation: Define the chosen formula. Examples from plan:
-        - Urgency-Based: $Risk = P_{fail} / (T_{left} + \epsilon)$ (where $\epsilon$ is a small constant to avoid division by zero). Higher probability and shorter time lead to higher risk.
-        - Alternative: $Risk = P_{fail} \times (\text{Max Observed Time} - T_{left})$ (or similar scaling). Justify the chosen formulation.
-    \item Normalization: Explain the need for normalization (e.g., scaling to [0, 1]).
-        - Method used: Min-Max Scaling: $Risk_{norm} = (Risk - Risk_{min}) / (Risk_{max} - Risk_{min})$. Explain how $Risk_{min}$ and $Risk_{max}$ are determined (e.g., from the validation set).
-    \item Decision Logic:
-        - Thresholding: Define an alert threshold $\theta$ on the normalized Risk Score. If $Risk_{norm} > \theta$, issue a maintenance alert.
-        - Threshold Tuning: Explain how $\theta$ was chosen (e.g., analyzing Precision-Recall curve for identifying high-risk states on the validation set, balancing true alerts vs. false alarms).
-    \item Visualization: Plot the calculated Risk Score over time for sample engines. (Placeholder for \cref{fig:risk_score_trend}).
+	\item \textbf{Risk Components:}
+	      \begin{itemize}
+		      \item \textbf{Failure Probability ($P_{fail}$):} Obtained from the selected classifier's predict\_proba output. This is typically the probability assigned to the final stage (Stage 4), denoted $P(\text{Stage 4})$.
+		      \item \textbf{Time Left Proxy ($T_{proxy}$):} While Phase 3 predicts time-to-next-stage, for the risk score, we need an estimate related to time-to-failure. In this implementation, we use the \textit{current predicted stage} as a proxy for urgency, rather than directly using the regression output. Other options could involve summing regression predictions or training a dedicated time-to-failure model.
+	      \end{itemize}
+	\item \textbf{Risk Score Formulation:} We implement and evaluate formulas defined in src.risk\_assessment.calculation.calculate\_risk\_scores, such as:
+	      \begin{itemize}
+		      \item \textbf{Urgency-Inverted (Stage-based Proxy):} $Risk = P(\text{Stage 4}) / (S_{max} - S_{predicted} + \epsilon)$, where $S_{predicted}$ is the predicted stage from the classifier and $S_{max}$ is the maximum stage value (e.g., 4). This score increases as the predicted stage gets closer to failure.
+		      \item \textbf{Severity-Product (Stage-based Proxy):} $Risk = P(\text{Stage 4}) \times (S_{predicted} + 1)$. This score increases with both the probability of failure and the predicted severity (stage number).
+	      \end{itemize}
+	      The specific formula used for final results is chosen based on experimental evaluation.
+	\item \textbf{Normalization:} The raw risk scores are normalized to a [0, 1] range using Min-Max scaling (src.risk\_assessment.calculation.normalize\_risk\_scores) based on the range observed in the validation data. This provides a consistent scale for thresholding.
+	\item \textbf{Decision Logic:} An alert threshold $\theta$ is applied to the normalized risk score (src.risk\_assessment.decision.generate\_alerts). If $Risk_{norm} > \theta$, a maintenance alert is triggered. The threshold is ideally tuned using techniques described in src.risk\_assessment.decision.document\_threshold\_tuning\_strategy, potentially involving analysis of Precision-Recall curves on validation data if ground truth for 'alert-worthy' events can be defined.
+	\item \textbf{Visualization:} The evolution of the normalized risk score over an engine's life cycle is plotted for sample engines (src.risk\_assessment.visualization.plot\_risk\_score\_trends) to illustrate its behavior and the effect of the alert threshold (\cref{fig:risk_score_trend}).
 \end{itemize}
 
-% --- Figure Placeholder ---
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/risk_score_trend.pdf} % Replace with your risk score plot
-%   \caption{Example of normalized Risk Score evolution over cycles for a sample engine, showing the alert threshold.}
-%   \label{fig:risk_score_trend}
-% \end{figure}
-% --------------------------
-
-
-% ======================================================================
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.9\linewidth]{/home/cv-rishi/Dropbox/University/Sem4/CS3102/project/images/risk_assessment/FD001/risk_assessment/FD001/risk_run_e41acc17_20250509_011418/risk_trend_engine_72_norm_risk_run_e41acc17_20250509_011418.png}
+	\caption{Example plot showing the normalized Risk Score evolution over cycles for a sample engine, with the determined alert threshold indicated.}
+	\label{fig:risk_score_trend}
+\end{figure}

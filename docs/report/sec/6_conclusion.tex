@@ -1,28 +1,6 @@
-% sec/6_conclusion.tex
 \section{Conclusion}
 \label{sec:conclusion}
 
-% Summarize the paper concisely.
-\paragraph{Summary.}
-This paper presented a hybrid predictive maintenance framework for turbofan engines using the NASA CMAPSS dataset. We addressed the limitation of traditional binary or RUL-focused approaches by introducing a method to define multi-stage degradation labels via unsupervised clustering of sensor data. Our four-phase methodology involved: (1) data-driven stage labeling, (2) classification for current stage prediction, (3) regression for time-to-next-stage/failure estimation, and (4) calculation of a normalized Risk Score combining probabilistic and temporal predictions for decision support.
+This paper introduced a hybrid predictive maintenance framework for turbofan engines, leveraging the CMAPSS dataset. By employing unsupervised clustering (KMeans) to define data-driven degradation stages, we moved beyond standard RUL prediction. Our four-phase approach integrated classification (using KNN, GNB, LogReg) to predict the current health stage and regression (using Ridge, XGBoost) to estimate time-to-next-stage, culminating in a novel Risk Score combining probability and urgency proxies for maintenance decision support. Experiments demonstrated the feasibility of deriving and predicting multi-stage health states, with the Risk Score offering a potentially valuable tool for operational planning.
 
-% Reiterate key findings and contributions.
-\paragraph{Key Findings.}
-Our experiments demonstrated the feasibility of deriving meaningful degradation stages directly from sensor data. The hybrid model showed promising results in predicting both the current health stage (with careful handling of class imbalance) and the remaining time in that stage or until failure. The proposed Risk Score provides an intuitive metric that captures both the likelihood and urgency of potential failure, offering a potentially valuable tool for maintenance planning.
-
-% Discuss limitations and future work.
-\paragraph{Limitations and Future Work.}
-Limitations include the reliance on simulated data and the sensitivity of the approach to the initial clustering quality and interpretation. Future work could involve:
-\begin{itemize}
-	\item Applying the framework to real-world operational data.
-	\item Exploring more advanced clustering techniques (e.g., deep clustering, time-series specific clustering).
-	\item Investigating different Risk Score formulations and thresholding strategies.
-	\item Integrating domain knowledge more explicitly into the stage definition or modeling process.
-	\item Extending the framework to predict specific fault modes associated with degradation stages.
-\end{itemize}
-
-% Concluding remark on the potential impact.
-\paragraph{Concluding Remarks.}
-By moving towards data-driven, multi-stage health assessment and integrating classification, regression, and risk analysis, this work offers a step towards more granular and actionable predictive maintenance strategies for complex systems.
-
-% ======================================================================
+Limitations include the use of simulated data and sensitivity to clustering choices. Future work could involve real-world data validation, exploring advanced clustering and time-series models, refining the Risk Score formulation, and incorporating domain knowledge more formally. Overall, this work presents a step towards more granular and actionable predictive maintenance through hybrid modeling and data-driven health staging.

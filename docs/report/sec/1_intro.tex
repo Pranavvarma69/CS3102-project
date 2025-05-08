@@ -1,26 +1,12 @@
 \section{Introduction}
 \label{sec:intro}
 
-% Motivation: Importance of Predictive Maintenance (PdM) in industries (aerospace, energy, manufacturing).
-% Problem: Limitations of traditional PdM.
-%   - Often binary (failure/no failure), missing gradual degradation.
-%   - Reliance on predefined labels (like standard RUL) might not capture true operational degradation stages.
-%   - Need for more granular insights for optimal maintenance planning.
 \paragraph{The Challenge of Granular Predictive Maintenance.}
 Introduce the context of PdM and its economic/safety significance. Discuss the shortcomings of existing binary or simple RUL prediction models, highlighting the need to understand intermediate degradation states in complex machinery like aircraft engines. Mention the CMAPSS dataset as a standard benchmark.
 
-% Proposed Solution: Overview of the hybrid approach.
-%   - Multi-stage failure labeling using clustering on raw sensor data (innovation).
-%   - Combining classification (current stage) and regression (time to next stage/failure).
-%   - Introduction of a Risk Score for decision support.
 \paragraph{Our Hybrid Approach.}
 Briefly introduce the core ideas: deriving data-driven degradation stages via clustering, using these stages for both classification and regression tasks, and combining the outputs into a practical Risk Score. Emphasize the novelty of generating custom labels and the hybrid nature of the prediction.
 
-% Contributions: List the key contributions.
-%   - Novel method for generating multi-stage degradation labels from CMAPSS sensor data using clustering.
-%   - Hybrid framework combining classification and regression for stage and time prediction.
-%   - Formulation and application of a Risk Score for maintenance decision-making.
-%   - Comprehensive evaluation on the CMAPSS dataset.
 \paragraph{Contributions.}
 Clearly list the main contributions, aligning with the points above. Use a compact list environment if desired:
 \begin{itemize}
@@ -30,17 +16,5 @@ Clearly list the main contributions, aligning with the points above. Use a compa
 	\item Extensive experimental validation on the CMAPSS dataset demonstrating the feasibility and potential benefits of the proposed approach.
 \end{itemize}
 
-% Paper Structure: Outline the rest of the paper.
 \paragraph{Paper Organization.}
-Section \cref{sec:related_work} reviews relevant literature. Section \cref{sec:methodology} details our proposed methodology. Section \cref{sec:experiments} describes the experimental setup. Section \cref{sec:results} presents and discusses the results. Section \cref{sec:conclusion} concludes the paper.
-
-% --- Optional: Figure Placeholder ---
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.8\linewidth]{figures/concept_overview.pdf} % Replace with your concept figure
-%   \caption{Conceptual overview of the proposed hybrid predictive maintenance framework.}
-%   \label{fig:concept}
-% \end{figure}
-% ----------------------------------
-
-% ======================================================================
+Section \ref{sec:related_work} reviews relevant literature on predictive maintenance, the CMAPSS dataset, clustering for health monitoring, and hybrid modeling approaches. Section \ref{sec:methodology} details our proposed four-phase methodology, covering data preprocessing, feature engineering, clustering for stage definition, classification modeling, regression modeling, and risk score formulation. Section \ref{sec:experiments} describes the experimental setup, including dataset specifics, implementation details, and evaluation metrics. Section \ref{sec:results} presents and discusses the results obtained for each phase across the different CMAPSS subsets. Finally, Section \ref{sec:conclusion} concludes the paper, summarizing the findings and suggesting directions for future work.

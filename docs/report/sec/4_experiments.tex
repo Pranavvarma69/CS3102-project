@@ -1,43 +1,23 @@
 \section{Experiments}
 \label{sec:experiments}
+\subsection{Setup}
+We evaluated our framework on the NASA CMAPSS turbofan engine degradation dataset \cite{cmapss_data}, specifically subsets FD001-FD004 representing different operational conditions and fault modes. To maintain temporal integrity, we utilized 5-fold GroupKFold cross-validation based on engine ID, ensuring all data points from a single engine remained entirely within either the training or validation set. Implementation used Python with libraries including scikit-learn, pandas, imbalanced-learn, Matplotlib, Seaborn, and XGBoost.
 
-\subsection{Dataset and Setup}
-\begin{itemize}
-    \item Reiterate CMAPSS subsets used (FD001-FD004). Briefly describe key differences if relevant (e.g., fault modes, operating conditions).
-    \item Data Splitting Strategy: Crucial for time-series / multi-engine data.
-        - Avoid random shuffling that leaks future data.
-        - Strategy used: e.g., Train on first X% of cycles per engine, test on rest? Train on some engines, test on others? GroupKFold based on engine ID for cross-validation? Be specific and justify.
-    \item Software/Libraries: Python version, scikit-learn, pandas, numpy, matplotlib, seaborn, XGBoost, LightGBM, etc.
-\end{itemize}
+\subsection{Data Exploration}
+Exploratory analysis revealed key insights: (1) sensor readings follow discernible patterns as engines approach failure; (2) several sensors (e.g., s1, s5, s6, s10, s16, s18, s19 for FD001) showed constant values and were removed; (3) remaining sensors displayed varying degradation patterns ideal for stage identification; and (4) significant class imbalance exists with later degradation stages being underrepresented. These findings guided our feature engineering and modeling approaches.
 
-\subsection{Implementation Details}
+\subsection{Implementation Summary}
+Following our methodology, we implemented the four-phase hybrid framework:
+
 \begin{itemize}
-    \item Clustering: Final parameters chosen (k for KMeans, linkage for Agglomerative), features used.
-    \item Feature Engineering: Final window sizes used for rolling statistics.
-    \item Classification:
-        - Specific models trained.
-        - Hyperparameter tuning process (e.g., GridSearchCV, RandomizedSearchCV), parameter grids searched, cross-validation strategy (link to splitting strategy).
-        - Final hyperparameters for the best model(s).
-        - Imbalance handling method details.
-    \item Regression:
-        - Specific models trained.
-        - Target variable definition details (handling Stage 4).
-        - Hyperparameter tuning process and final parameters.
-    \item Risk Score:
-        - Specific probability used ($P(\text{Stage 4})$?).
-        - Specific $T_{left}$ derivation.
-        - Normalization details ($min/max$ values from validation set).
-        - Method for threshold tuning (e.g., F-beta score maximization on PR curve).
+    \item \textbf{Phase 1 (Clustering):} We tested K-Means and Agglomerative clustering algorithms, selecting K-Means ($k=5$) due to its lower hyperparameter tuning requirements and training efficiency. Clusters were mapped to degradation stages (0-4) based on RUL averages and validated through visual inspection of sensor trends and dimensionality reduction visualizations.
+
+    \item \textbf{Phase 2 (Classification):} We trained KNN, Gaussian Naive Bayes, and Logistic Regression models to predict the `kmeans\_stage`. These algorithms were chosen for their interpretability and relatively few hyperparameters, enabling faster training. We addressed class imbalance using SMOTE within cross-validation folds and/or `class\_weight='balanced'`. Hyperparameters were tuned via RandomizedSearchCV or GridSearchCV, optimizing for macro F1-score.
+
+    \item \textbf{Phase 3 (Regression):} Ridge Regression and XGBoost models were trained to predict `time\_to\_next\_stage`. Features included rolling statistics, lag features, selected raw sensors, and the predicted `kmeans\_stage`. Hyperparameters were tuned optimizing for negative RMSE.
+
+    \item \textbf{Phase 4 (Risk Score):} Calculated using the probability of Stage 4 and the predicted stage with our risk formula. Scores were Min-Max normalized, with alerts triggered above a threshold determined through validation performance.
 \end{itemize}
 
 \subsection{Evaluation Metrics}
-\begin{itemize}
-    \item Restate the primary metrics used for each phase:
-        - Clustering: Visual inspection, Silhouette Score (if used).
-        - Classification: Per-class Precision, Recall, F1-score; Weighted/Macro F1; Confusion Matrix.
-        - Regression: RMSE, MAE, R².
-        - Risk Score: Precision-Recall analysis for alert threshold tuning.
-\end{itemize}
-
-
-% ======================================================================
+Performance was assessed through multiple lenses: (1) for clustering, we used visual inspection of PCA/t-SNE projections, sensor trend analysis, and stage distributions; (2) for classification, we measured macro/weighted F1-scores, per-class precision, recall, and F1, with special attention to performance on critical stages 3 and 4; (3) for regression, we calculated RMSE, MAE, and R², complemented by actual vs. predicted and residual plots; and (4) for the risk score, we examined temporal risk trends and alert precision/recall metrics.
